@@ -4,7 +4,7 @@ __author__ = 'eliashamida'
 ml.py contains essential functions for machine learning used in other scripts.
 '''
 
-from sklearn import svm, cross_validation
+from sklearn import svm, cross_validation, naive_bayes, linear_model, neighbors
 from sklearn.metrics import accuracy_score, roc_auc_score, make_scorer
 from sklearn.grid_search import GridSearchCV
 
@@ -18,10 +18,15 @@ def removeMissingExamples(fmatrix, labels):
     :param p_labels: 1d np.array, labels
     :return:
     '''
-    keep_inds = ~np.all(fmatrix == 0, axis=1) # 73586/136839 are not 0
-    fmatrix = fmatrix[keep_inds] # remove missing data (rows where all columns == 0)
+    if fmatrix.shape[1] == 8413:
+        ki1 = ~np.all(fmatrix[:,:219]==0, axis=1)
+        ki2 = ~np.all(fmatrix[:,220:]==0, axis=1)
+        keep_inds = map(all, zip(ki1, ki2))
+    else:
+        keep_inds = ~np.all(fmatrix == 0, axis=1) # 73586/136839 are not 0
+    fmatrix = fmatrix[np.array(keep_inds)] # remove missing data (rows where all columns == 0)
     # len(np.where(p_fmatrix == 1e6)[0]) # 1,356,704/29,967,741
-    labels = labels[keep_inds]
+    labels = labels[np.array(keep_inds)]
 
     return( (fmatrix, labels) )
 

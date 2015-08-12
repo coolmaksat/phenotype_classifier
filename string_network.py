@@ -50,3 +50,7 @@ string = string[string_cols]
 string_graph = returnIGraph(string, False)
 
 string_graph.write_graphml('data/processed_data/string.graphml')
+
+## load string from file and create .graphML object with subset of nodes -----------------------------------------------
+sg = ig.Graph.Read_GraphML('data/processed_data/string_l200.graphml')
+

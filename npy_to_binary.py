@@ -9,9 +9,10 @@ __author__ = 'Dirk Eddelbuettel'
 
 import struct
 import numpy as np
+import sys
 
-inputfile = "data/processed_data/adj2_string.npy"
-outputfile = "data/processed_data/adj2_string.bin"
+inputfile = sys.argv[1]
+outputfile = sys.argv[2]
 
 # load from the file
 mat = np.load(inputfile)

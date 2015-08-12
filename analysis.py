@@ -9,7 +9,22 @@ from funs import *
 analysis.py contains functions for analyzing results of the gridsearch others.
 '''
 
-def parseMetricsFile(filename, metric):
+def parseMetricsFile2(filename, metric, d, cols):
+    '''
+
+    :param filename:
+    :param metric:
+    :return:
+    '''
+    df = pd.read_csv(filename, squeeze=True, header=None, sep=d)
+    df = df.drop(cols, axis=1)
+    df.columns = ['phenotype',metric]
+    df.ba = df.ba.str.replace(',', '')
+    df[metric] = df[metric].astype('float')
+
+    return(df)
+
+def parseMetricsFile(filename, metric, d, cols):
     '''
 
     :param filename:
@@ -17,8 +32,8 @@ def parseMetricsFile(filename, metric):
     :return:
     '''
     df = pd.read_csv(filename, squeeze=True)
-    df = df.str.split('_|roc_|.txt').apply(pd.Series)
-    df = df.drop([1,2,3,5], axis=1)
+    df = df.str.split(d+'|'+metric+d+'|.txt').apply(pd.Series)
+    df = df.drop(cols, axis=1)
     df.columns = ['phenotype',metric]
     df[metric] = df[metric].astype('float')
 
@@ -85,6 +100,33 @@ def addDepthToDf(df):
 
     return(df)
 
+def fix_mp_ont(graph):
+    def returnTopMPTerm(mp_term):
+        '''
+
+        :param mp_term:
+        :param graph:
+        :return:
+        '''
+        nghbrd = graph.neighborhood(mp_term, order=graph.vcount(), mode='out')
+        correct_node = [node for node in nghbrd if graph.get_eid(node,10928, directed=False, error=False)!=-1]
+        node_name = graph.vs[correct_node[0]]['name']
+        return node_name
+    return returnTopMPTerm
+
+def addTopTermToDf(df):
+    '''
+
+    :param df:
+    :return:
+    '''
+    mp_ont = MPFromFile('data/ontologies/mp_ont.csv')
+    fixed = fix_mp_ont(mp_ont)
+    df['top_mp_term'] = df.phenotype.apply(fixed)
+
+    return df
+
+
 def returnNeighborhood(mp_term, graph):
     '''
 
@@ -92,10 +134,13 @@ def returnNeighborhood(mp_term, graph):
     :param graph:
     :return:
     '''
-    nghbrd = graph.neighborhood(mp_term, order=graph.vcount(), mode='in')
+    nghbrd = graph.neighborhood(mp_term, order=graph.vcount(), mode='out')
     nghbrd_names = graph.vs[nghbrd]['name']
 
     return(nghbrd_names)
+
+
+
 
 def meanMetricPerParentTerm(df, metric):
     '''
@@ -143,4 +188,15 @@ def meanMetricPerParentTerm(df, metric):
                   for key in dict_terms.keys() }
 
     return(dict_hist)
+
+def enrichment_cutoff(row, thresh, col):
+    '''
+
+    :param row:
+    :return:
+    '''
+    if row[col] > thresh:
+        return 1
+    else:
+        return 0
 

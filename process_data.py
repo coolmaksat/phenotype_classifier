@@ -7,6 +7,19 @@ process_data.py contains functions for processing raw data into useable pandas.D
 import pandas as pd
 import numpy as np
 
+
+def splitCols(df, colname, split_criterion):
+    ## in: (dataframe, string, string), dataframe with split criterion and column which needs splitting
+    ## out: dataframe, with new rows based on split criterion for a specific column
+
+    s = df[colname].str.split(split_criterion).apply(pd.Series, 1).stack()
+    s.index = s.index.droplevel(-1) # to line up with df's index
+    s.name = colname # needs a name to join
+    del df[colname]
+    df = df.join(s)
+
+    return(df)
+
 def readFiles(*filenames):
     ## in: tuple, filenames (variable length)
     ## out: dictionary, intuitive names as keys and raw data tables as values
@@ -42,6 +55,8 @@ def preProcessData(raw_data):
     if 'gene_pheno' in raw_data.keys():
         raw_data['gene_pheno'] = raw_data['gene_pheno'].drop([0, 1, 2, 3, 5, 7, 8], axis=1)
         raw_data['gene_pheno'].columns = ['phenotype', 'marker_id']
+        raw_data['gene_pheno'] = splitCols(raw_data['gene_pheno'], 'marker_id', ',')
+        raw_data['gene_pheno'] = raw_data['gene_pheno'].reset_index(drop=True)
     if 'entrez' in raw_data.keys():
         raw_data['entrez'] = preProcessEntrez(raw_data['entrez'])
     if 'interpro' in raw_data.keys():
@@ -170,18 +185,6 @@ def collapseToGeneLvl(data, ME_dict):
         i+=1
 
     data['gene_pheno'] = pd.DataFrame({'entrez_id': entrez_ids, 'phenotype': l })
-
-def splitCols(df, colname, split_criterion):
-    ## in: (dataframe, string, string), dataframe with split criterion and column which needs splitting
-    ## out: dataframe, with new rows based on split criterion for a specific column
-
-    s = df[colname].str.split(split_criterion).apply(pd.Series, 1).stack()
-    s.index = s.index.droplevel(-1) # to line up with df's index
-    s.name = colname # needs a name to join
-    del df[colname]
-    df = df.join(s)
-
-    return(df)
 
 def getRawData():
     '''
